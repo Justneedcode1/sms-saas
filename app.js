@@ -31,141 +31,114 @@ app.get('/api/v1', (req, res) => {
 
 // Register with Email
 app.post('/api/v1/auth/register', (req, res) => {
-  const { email, password, firstName, lastName, companyName } = req.body;
+  try {
+    const { email, password, firstName, lastName, companyName } = req.body;
 
-  // Validate input
-  if (!email || !password || !firstName || !lastName) {
-    return res.status(400).json({
-      success: false,
-      message: 'Missing required fields'
-    });
-  }
+    console.log('Register request:', { email, firstName, lastName });
 
-  if (password.length < 8) {
-    return res.status(400).json({
-      success: false,
-      message: 'Password must be at least 8 characters'
-    });
-  }
-
-  // Check if user exists
-  if (users[email]) {
-    return res.status(400).json({
-      success: false,
-      message: 'Email already registered'
-    });
-  }
-
-  // Create user
-  const userId = 'user_' + Date.now();
-  users[email] = {
-    id: userId,
-    email,
-    password, // In production, hash this!
-    firstName,
-    lastName,
-    companyName: companyName || 'My Company',
-    walletBalance: 100, // Free $100 on signup
-    createdAt: new Date()
-  };
-
-  const token = 'token_' + userId;
-
-  res.json({
-    success: true,
-    message: 'User registered successfully',
-    token,
-    user: {
-      id: userId,
-      email,
-      firstName,
-      lastName,
-      companyName: users[email].companyName
+    // Validate input
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields required'
+      });
     }
-  });
-});
 
-// Login
-app.post('/api/v1/auth/login', (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({
-      success: false,
-      message: 'Email and password required'
-    });
-  }
-
-  const user = users[email];
-
-  if (!user || user.password !== password) {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid email or password'
-    });
-  }
-
-  const token = 'token_' + user.id;
-
-  res.json({
-    success: true,
-    message: 'Login successful',
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      companyName: user.companyName
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters'
+      });
     }
-  });
-});
 
-// Google OAuth Login
-app.post('/api/v1/auth/google', (req, res) => {
-  const { idToken, email, firstName, lastName, picture } = req.body;
+    // Check if user exists
+    if (users[email]) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already registered'
+      });
+    }
 
-  if (!email) {
-    return res.status(400).json({
-      success: false,
-      message: 'Google login failed'
-    });
-  }
-
-  // Check if user exists
-  if (!users[email]) {
-    // Create new user from Google
+    // Create user
     const userId = 'user_' + Date.now();
     users[email] = {
       id: userId,
       email,
-      firstName: firstName || 'User',
-      lastName: lastName || '',
-      companyName: 'My Company',
-      picture,
-      googleId: idToken,
-      walletBalance: 100, // Free $100 on signup
-      signupMethod: 'google',
+      password,
+      firstName,
+      lastName,
+      companyName: companyName || 'My Company',
+      walletBalance: 100,
       createdAt: new Date()
     };
+
+    const token = 'token_' + userId;
+
+    console.log('User registered:', email);
+
+    return res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      token,
+      user: {
+        id: userId,
+        email,
+        firstName,
+        lastName,
+        companyName: users[email].companyName
+      }
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Registration error: ' + error.message
+    });
   }
+});
 
-  const user = users[email];
-  const token = 'token_' + user.id;
+// Login
+app.post('/api/v1/auth/login', (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-  res.json({
-    success: true,
-    message: 'Google login successful',
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      companyName: user.companyName,
-      picture: user.picture
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password required'
+      });
     }
-  });
+
+    const user = users[email];
+
+    if (!user || user.password !== password) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password'
+      });
+    }
+
+    const token = 'token_' + user.id;
+
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        companyName: user.companyName
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Login error: ' + error.message
+    });
+  }
 });
 
 // Send SMS
@@ -204,29 +177,20 @@ app.get('/api/v1/wallet', (req, res) => {
 
 // Get messages
 app.get('/api/v1/sms/messages', (req, res) => {
-  res.json({app.post('/api/v1/auth/login', (req, res) => {
   res.json({
     success: true,
-    message: 'Login successful',
-    token: 'jwt_token'
+    messages: []
   });
 });
 
-app.post('/api/v1/sms/send', (req, res) => {
-  res.json({
-    success: true,
-    message: 'SMS sent',
-    messageId: 'msg_123'
-  });
-});
-
-app.get('/api/v1/wallet', (req, res) => {
-  res.json({
-    success: true,
-    wallet: { balance: 100, currency: 'USD' }
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Endpoint not found'
   });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✓ Server running on port ${PORT}`);
 });
